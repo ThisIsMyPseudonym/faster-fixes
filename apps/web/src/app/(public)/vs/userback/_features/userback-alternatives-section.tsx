@@ -50,8 +50,9 @@ const alternatives: Alternative[] = [
   {
     name: "Gleap",
     bestFor: "SaaS products combining in-app support and feedback",
-    startingPrice: "$49/mo",
+    startingPrice: "$39/mo",
     openSource: { type: "no" },
+    href: "/vs/gleap" as Route,
   },
   {
     name: "Feedbucket",

@@ -1,7 +1,13 @@
 import type { Route } from "next";
 import Link from "next/link";
 
-type VsSlug = "atarim" | "bugherd" | "marker-io" | "userback" | "usersnap";
+type VsSlug =
+  | "atarim"
+  | "bugherd"
+  | "gleap"
+  | "marker-io"
+  | "userback"
+  | "usersnap";
 
 const allComparisons: { slug: VsSlug; label: string; href: Route }[] = [
   { slug: "bugherd", label: "BugHerd alternative", href: "/vs/bugherd" as Route },
@@ -9,6 +15,7 @@ const allComparisons: { slug: VsSlug; label: string; href: Route }[] = [
   { slug: "usersnap", label: "Usersnap alternative", href: "/vs/usersnap" as Route },
   { slug: "userback", label: "Userback alternative", href: "/vs/userback" as Route },
   { slug: "atarim", label: "Atarim alternative", href: "/vs/atarim" as Route },
+  { slug: "gleap", label: "Gleap alternative", href: "/vs/gleap" as Route },
 ];
 
 type VsCrossLinksProps = {

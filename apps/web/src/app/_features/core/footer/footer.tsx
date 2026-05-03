@@ -19,6 +19,7 @@ const alternativesLinks: { text: string; href: Route }[] = [
   { text: "Usersnap alternative", href: "/vs/usersnap" as Route },
   { text: "Userback alternative", href: "/vs/userback" as Route },
   { text: "Atarim alternative", href: "/vs/atarim" as Route },
+  { text: "Gleap alternative", href: "/vs/gleap" as Route },
 ];
 
 const legalLinks = [

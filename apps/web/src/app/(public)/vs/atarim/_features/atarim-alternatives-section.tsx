@@ -55,9 +55,10 @@ const alternatives: Alternative[] = [
   {
     name: "Gleap",
     bestFor:
-      "SaaS teams needing all-in-one bug reporting, live chat, session replay, and roadmap",
-    startingPrice: "$49/mo",
+      "SaaS teams needing all-in-one bug reporting, AI chatbot, ticketing, and knowledge base",
+    startingPrice: "$39/mo",
     openSource: { type: "no" },
+    href: "/vs/gleap" as Route,
   },
   {
     name: "Feedbucket",

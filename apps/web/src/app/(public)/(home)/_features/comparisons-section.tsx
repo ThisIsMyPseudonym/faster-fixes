@@ -34,6 +34,12 @@ const comparisons: Comparison[] = [
     href: "/vs/atarim" as Route,
     description: "Visual collaboration for WordPress agencies.",
   },
+  {
+    label: "Gleap alternative",
+    href: "/vs/gleap" as Route,
+    description:
+      "All-in-one customer support platform with an AI chatbot.",
+  },
 ];
 
 export function ComparisonsSection() {
