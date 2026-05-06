@@ -7,6 +7,10 @@ export const syncGitHubIssueStatus = inngest.createFunction(
   {
     id: "sync-github-issue-status",
     retries: 3,
+    concurrency: {
+      key: "event.data.repoFullName + ':' + event.data.issueNumber",
+      limit: 1,
+    },
     triggers: [{ event: "github/webhook.issues" }],
   },
   async ({ event }) => {
@@ -53,6 +57,16 @@ export const syncGitHubIssueStatus = inngest.createFunction(
         },
       }),
     ]);
+
+    // Propagate to other trackers (e.g. Linear) so the feedback stays canonical.
+    await inngest.send({
+      name: "feedback/status-changed",
+      data: {
+        feedbackId: issueLink.feedbackId,
+        newStatus,
+        origin: "github",
+      },
+    });
 
     return { feedbackId: issueLink.feedbackId, newStatus };
   },

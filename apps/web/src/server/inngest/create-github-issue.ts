@@ -11,7 +11,14 @@ export const createGitHubIssue = inngest.createFunction(
   {
     id: "create-github-issue",
     retries: 3,
-    triggers: [{ event: "feedback/created" }],
+    concurrency: { key: "event.data.feedbackId", limit: 1 },
+    triggers: [
+      { event: "feedback/created" },
+      {
+        event: "feedback/integration-issue-requested",
+        if: "event.data.target == 'github'",
+      },
+    ],
   },
   async ({ event }) => {
     const { feedbackId } = event.data;
@@ -28,14 +35,28 @@ export const createGitHubIssue = inngest.createFunction(
         },
         reviewer: { select: { name: true } },
         screenshot: { select: { key: true, bucket: true } },
+        issueLink: { select: { id: true } },
       },
     });
 
     if (!feedback) return { skipped: "feedback_not_found" };
 
+    // Handler-level idempotency closes the duplicate-issue footgun: any future
+    // emit of `feedback/created` (backfills, admin re-triggers) will short-circuit
+    // here instead of creating a second GH issue.
+    if (feedback.issueLink) {
+      return { skipped: "github_issue_already_exists" };
+    }
+
     const gitHubLink = feedback.project.gitHubLink;
-    if (!gitHubLink || !gitHubLink.autoCreateIssues) {
-      return { skipped: "no_github_link_or_auto_create_disabled" };
+    if (!gitHubLink) return { skipped: "no_github_link" };
+
+    // Auto-create only on `feedback/created`. Manual trigger
+    // (`feedback/integration-issue-requested`) bypasses the auto-create switch.
+    const isManualTrigger =
+      event.name === "feedback/integration-issue-requested";
+    if (!isManualTrigger && !gitHubLink.autoCreateIssues) {
+      return { skipped: "auto_create_disabled" };
     }
 
     const installation = gitHubLink.gitHubInstallation;

@@ -8,10 +8,18 @@ export const syncFeedbackStatusToGitHub = inngest.createFunction(
   {
     id: "sync-feedback-status-to-github",
     retries: 3,
+    concurrency: { key: "event.data.feedbackId", limit: 1 },
     triggers: [{ event: "feedback/status-changed" }],
   },
   async ({ event }) => {
-    const { feedbackId, newStatus } = event.data;
+    const { feedbackId, newStatus, origin } = event.data as {
+      feedbackId: string;
+      newStatus: string;
+      origin?: "app" | "github" | "linear";
+    };
+
+    // If this status change originated on GitHub, don't echo back.
+    if (origin === "github") return { skipped: "origin_github" };
 
     const issueLink = await prisma.feedbackIssueLink.findUnique({
       where: { feedbackId },
