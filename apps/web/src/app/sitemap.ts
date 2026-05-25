@@ -1,4 +1,5 @@
 import { APP_URL } from "@/app/_constants/app";
+import { blogSource } from "@/lib/blog/source";
 import { source } from "@/lib/docs/source";
 import type { MetadataRoute } from "next";
 
@@ -7,6 +8,15 @@ export default function sitemap(): MetadataRoute.Sitemap {
     url: `${APP_URL}${page.url}`,
     lastModified: new Date(),
     changeFrequency: "weekly" as const,
+    priority: 0.7,
+  }));
+
+  const blogPages = blogSource.getPages().map((page) => ({
+    url: `${APP_URL}${page.url}`,
+    lastModified: page.data.updatedAt
+      ? new Date(page.data.updatedAt)
+      : new Date(page.data.date),
+    changeFrequency: "monthly" as const,
     priority: 0.7,
   }));
 
@@ -95,6 +105,13 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: "weekly",
       priority: 0.7,
     },
+    {
+      url: `${APP_URL}/blog`,
+      lastModified: new Date(),
+      changeFrequency: "weekly",
+      priority: 0.7,
+    },
+    ...blogPages,
     ...docPages,
     {
       url: `${APP_URL}/privacy-policy`,
