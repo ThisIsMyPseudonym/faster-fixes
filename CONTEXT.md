@@ -42,8 +42,26 @@ The project-level binding from a Faster Fixes Project to a Tracker scope (a GitH
 **Issue link**:
 The per-Feedback record connecting a single Feedback to its mirrored issue in a Tracker. A Feedback can have at most one issue link per Tracker, but may have one for GitHub *and* one for Linear simultaneously.
 
+### Diagnostics
+
+**Diagnostic Trail**:
+The console and network history captured leading up to a Feedback submission, attached to that Feedback to aid reproduction.
+_Avoid_: Session, Logs, Recording (the Trail is a bounded snapshot, not a continuous session recording).
+
+**Console Entry**:
+One captured `console.*` call: level (`log`/`info`/`warn`/`error`/`debug`), message, timestamp. All levels captured.
+
+**Network Entry**:
+One captured `fetch`/`XHR` call: method, URL, status, duration, timestamp. Metadata only — request/response bodies are not captured in v1.
+
+**Ring Buffer**:
+The fixed-size in-memory store the Widget fills from page load; oldest entries drop when full. A Diagnostic Trail is a snapshot of this buffer at submission time.
+
 ## Relationships
 
+- A **Feedback** has zero or one **Diagnostic Trail**
+- A **Diagnostic Trail** contains many **Console Entries** and many **Network Entries**
+- The **Widget** maintains one **Ring Buffer** per page session; submitting Feedback snapshots it into a **Diagnostic Trail**
 - A **Project** has zero or one **Project link** per **Tracker** (GitHub, Linear)
 - A **Feedback** has zero or one **Issue link** per **Tracker**
 - A **Reviewer** submits **Feedback** through the widget; Reviewers are not authenticated app users
@@ -62,3 +80,4 @@ The per-Feedback record connecting a single Feedback to its mirrored issue in a 
 
 - **"Closed" vs "Archived"** — historically used interchangeably. Resolved: the canonical user-facing term is **Archived**. The DB literal `"closed"` is retained for now to avoid a migration; rename is deferred.
 - **"Issue"** — refers exclusively to a tracker-side artifact (GitHub Issue, Linear Issue). Internal app records are **Feedback**, never "issues".
+- **"logs"** — used loosely for the captured browser data. Resolved: the canonical term is **Diagnostic Trail** (console + network), distinct from server-side logs.
