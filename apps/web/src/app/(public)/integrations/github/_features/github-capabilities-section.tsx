@@ -12,7 +12,7 @@ const capabilities = [
   },
   {
     title: "Full dev context, zero follow-up questions",
-    body: "The issue body contains the CSS selector, React component path, source file, click coordinates, an embedded screenshot, and the client's browser, OS, and viewport. A developer can open the issue and start working immediately.",
+    body: "The issue body contains the CSS selector, React component path, source file, click coordinates, an embedded screenshot, the client's browser, OS, and viewport, and the console logs and network requests captured before submission. A developer can open the issue and start working immediately.",
   },
   {
     title: "Status stays in sync, both ways",

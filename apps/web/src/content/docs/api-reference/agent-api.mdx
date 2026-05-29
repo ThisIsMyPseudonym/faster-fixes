@@ -54,6 +54,14 @@ GET /feedbacks?project=proj_xxx
       "os": "macOS",
       "screenshotUrl": "https://...",
       "metadata": {},
+      "diagnosticTrail": {
+        "console": [
+          { "level": "error", "message": "Uncaught TypeError: x is undefined", "timestamp": 1736937000000 }
+        ],
+        "network": [
+          { "method": "GET", "url": "https://api.myapp.com/user", "status": 500, "duration": 142, "timestamp": 1736937000000 }
+        ]
+      },
       "reviewerName": "Sarah",
       "createdAt": "2025-01-15T10:30:00Z"
     }
