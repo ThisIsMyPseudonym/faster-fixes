@@ -1,3 +1,6 @@
+import { formatDiagnosticTrailLines } from "@/app/_features/feedback/format-feedback-markdown";
+import type { DiagnosticTrail } from "@fasterfixes/core";
+
 type FeedbackForIssue = {
   id: string;
   comment: string;
@@ -13,6 +16,7 @@ type FeedbackForIssue = {
   screenshotUrl: string | null;
   reviewerName: string;
   metadata: Record<string, unknown> | null;
+  diagnosticTrail?: DiagnosticTrail | null;
   projectId: string;
   dashboardUrl: string;
 };
@@ -92,6 +96,22 @@ export function formatIssueBody(feedback: FeedbackForIssue): string {
       lines.push(envParts.join(" \u00b7 "));
     }
     lines.push(`Submitted by ${feedback.reviewerName}`);
+    lines.push("");
+    lines.push("</details>");
+  }
+
+  // Collapsible diagnostics block (console + network)
+  const diagnosticLines = formatDiagnosticTrailLines(feedback.diagnosticTrail);
+  if (diagnosticLines.length > 0) {
+    const consoleCount = feedback.diagnosticTrail?.console.length ?? 0;
+    const networkCount = feedback.diagnosticTrail?.network.length ?? 0;
+    lines.push("");
+    lines.push("<details>");
+    lines.push(
+      `<summary>Diagnostics (${consoleCount} console, ${networkCount} network)</summary>`,
+    );
+    lines.push("");
+    lines.push(...diagnosticLines);
     lines.push("");
     lines.push("</details>");
   }

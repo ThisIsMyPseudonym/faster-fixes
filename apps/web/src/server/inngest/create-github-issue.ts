@@ -3,6 +3,7 @@ import {
   formatIssueTitle,
 } from "@/server/github/format-issue-body";
 import { getInstallationOctokit } from "@/server/github/github-app";
+import type { DiagnosticTrail } from "@fasterfixes/core";
 import { getSignedAssetUrl } from "@/server/storage/get-signed-asset-url";
 import { prisma } from "@workspace/db";
 import { inngest } from "./index";
@@ -86,6 +87,7 @@ export const createGitHubIssue = inngest.createFunction(
       screenshotUrl,
       reviewerName: feedback.reviewer.name,
       metadata: feedback.metadata as Record<string, unknown> | null,
+      diagnosticTrail: feedback.diagnosticTrail as DiagnosticTrail | null,
       projectId: feedback.projectId,
       dashboardUrl,
     });

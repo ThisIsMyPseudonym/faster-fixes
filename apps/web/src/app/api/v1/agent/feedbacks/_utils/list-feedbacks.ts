@@ -1,5 +1,6 @@
 import { formatFeedbackListAsMarkdown } from "@/app/_features/feedback/format-feedback-markdown";
 import { getSignedAssetUrl } from "@/server/storage/get-signed-asset-url";
+import type { DiagnosticTrail } from "@fasterfixes/core";
 import { prisma } from "@workspace/db";
 import { NextRequest, NextResponse } from "next/server";
 import { agentError } from "../../_utils/agent-error";
@@ -73,6 +74,7 @@ export async function listFeedbacks(req: NextRequest) {
         ? await getSignedAssetUrl(f.screenshot)
         : null,
       metadata: f.metadata as Record<string, unknown> | null,
+      diagnosticTrail: f.diagnosticTrail as DiagnosticTrail | null,
       reviewerName: f.reviewer.name,
       createdAt: f.createdAt,
     })),

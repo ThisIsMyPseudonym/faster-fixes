@@ -3,6 +3,8 @@
  * Used by both the dashboard export and the agent API.
  */
 
+import type { DiagnosticTrail } from "@fasterfixes/core";
+
 export type FeedbackForMarkdown = {
   id: string;
   status: string;
@@ -18,6 +20,9 @@ export type FeedbackForMarkdown = {
   os: string | null;
   screenshotUrl: string | null;
   metadata: Record<string, unknown> | null;
+  // Optional: the dashboard's lean list query doesn't load it; the agent API and
+  // issue creators do. Absent → the Diagnostics section is skipped.
+  diagnosticTrail?: DiagnosticTrail | null;
 };
 
 export function formatFeedbackAsMarkdown(f: FeedbackForMarkdown): string {
@@ -85,6 +90,15 @@ export function formatFeedbackAsMarkdown(f: FeedbackForMarkdown): string {
     lines.push(...envLines);
   }
 
+  // Diagnostics — console + network captured before submission
+  const diagnosticLines = formatDiagnosticTrailLines(f.diagnosticTrail);
+  if (diagnosticLines.length > 0) {
+    lines.push("");
+    lines.push("## Diagnostics");
+    lines.push("");
+    lines.push(...diagnosticLines);
+  }
+
   // Screenshot with instruction for multimodal AI agents
   if (f.screenshotUrl) {
     lines.push("");
@@ -106,4 +120,46 @@ export function formatFeedbackListAsMarkdown(
   return feedbacks
     .map((f) => formatFeedbackAsMarkdown(f))
     .join("\n\n---\n\n");
+}
+
+/**
+ * Render a Diagnostic Trail as markdown bullet lines (Console + Network).
+ * Returns `[]` when there is nothing to show, so callers can wrap it in their
+ * own heading or `<details>` block only when content exists. Shared so the
+ * agent API and the GitHub/Linear issue bodies stay consistent.
+ */
+export function formatDiagnosticTrailLines(
+  trail: DiagnosticTrail | null | undefined,
+): string[] {
+  if (!trail) return [];
+  const consoleEntries = trail.console ?? [];
+  const networkEntries = trail.network ?? [];
+  if (consoleEntries.length === 0 && networkEntries.length === 0) return [];
+
+  const lines: string[] = [];
+
+  if (consoleEntries.length > 0) {
+    lines.push("**Console**", "");
+    for (const entry of consoleEntries) {
+      lines.push(`- \`${entry.level}\` ${collapseWhitespace(entry.message)}`);
+    }
+    lines.push("");
+  }
+
+  if (networkEntries.length > 0) {
+    lines.push("**Network**", "");
+    for (const entry of networkEntries) {
+      const status = entry.status === 0 ? "ERR" : String(entry.status);
+      lines.push(
+        `- \`${entry.method}\` ${entry.url} → ${status} (${Math.round(entry.duration)}ms)`,
+      );
+    }
+  }
+
+  return lines;
+}
+
+// Console messages can be multi-line; flatten so each entry stays one bullet.
+function collapseWhitespace(value: string): string {
+  return value.replace(/\s*\n\s*/g, " ").trim();
 }
