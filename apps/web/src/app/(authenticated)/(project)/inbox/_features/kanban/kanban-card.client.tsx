@@ -8,6 +8,7 @@ import {
 } from "@workspace/ui/components/avatar";
 import { Checkbox } from "@workspace/ui/components/checkbox";
 import { GithubIcon } from "@workspace/ui/components/icons/github-icon";
+import { resolveS3Url } from "@/server/storage/resolve-s3-url";
 import { cn } from "@workspace/ui/lib/utils";
 import { formatDistanceToNow } from "date-fns";
 import { GripVertical } from "lucide-react";
@@ -89,7 +90,14 @@ function KanbanCardView({
         <div className="mt-2 flex items-center gap-2">
           {feedback.assignee ? (
             <Avatar className="size-5">
-              <AvatarImage src={feedback.assignee.image ?? undefined} />
+              <AvatarImage
+                src={
+                  feedback.assignee.image
+                    ? resolveS3Url(feedback.assignee.image)
+                    : undefined
+                }
+                className="object-cover"
+              />
               <AvatarFallback className="text-[10px]">
                 {feedback.assignee.name?.charAt(0)?.toUpperCase() ?? "?"}
               </AvatarFallback>

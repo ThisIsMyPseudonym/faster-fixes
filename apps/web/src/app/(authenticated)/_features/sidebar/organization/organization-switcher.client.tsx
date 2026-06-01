@@ -75,7 +75,11 @@ export function OrganizationSwitcher() {
               >
                 <Avatar className="h-6 w-6 rounded-md">
                   {orgLogo && (
-                    <AvatarImage src={resolveS3Url(orgLogo)} alt={orgName} />
+                    <AvatarImage
+                      src={resolveS3Url(orgLogo)}
+                      alt={orgName}
+                      className="object-cover"
+                    />
                   )}
                   <AvatarFallback className="rounded-md text-[10px]">
                     {getInitials(orgName)}

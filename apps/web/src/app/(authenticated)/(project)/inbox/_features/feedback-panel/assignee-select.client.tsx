@@ -2,6 +2,7 @@
 
 import { useFeedbackMutations } from "@/app/(authenticated)/(project)/inbox/_features/use-feedback-mutations";
 import { useOrgMembers } from "@/app/(authenticated)/(project)/inbox/_features/use-org-members";
+import { resolveS3Url } from "@/server/storage/resolve-s3-url";
 import {
   Avatar,
   AvatarFallback,
@@ -62,7 +63,12 @@ export function AssigneeSelect({
             <SelectItem key={member.id} value={member.id}>
               <div className="flex items-center gap-2">
                 <Avatar className="size-5">
-                  <AvatarImage src={member.image ?? undefined} />
+                  <AvatarImage
+                    src={
+                      member.image ? resolveS3Url(member.image) : undefined
+                    }
+                    className="object-cover"
+                  />
                   <AvatarFallback className="text-[10px]">
                     {member.name?.charAt(0)?.toUpperCase() ?? "?"}
                   </AvatarFallback>

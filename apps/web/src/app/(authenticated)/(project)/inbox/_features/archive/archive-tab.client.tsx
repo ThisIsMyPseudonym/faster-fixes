@@ -4,6 +4,7 @@ import { useActiveProject } from "@/app/_features/project/active-project-provide
 import { DataTable } from "@/app/_features/core/datatable/data-table";
 import { DataTableColumnHeader } from "@/app/_features/core/datatable/data-table-column-header";
 import { useTRPC } from "@/lib/trpc/trpc-client";
+import { resolveS3Url } from "@/server/storage/resolve-s3-url";
 import { matchQueryStatus } from "@/utils/tanstack-query/match-query-status";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type ColumnDef } from "@tanstack/react-table";
@@ -118,7 +119,10 @@ export function ArchiveTab() {
           return (
             <div className="flex items-center gap-1.5">
               <Avatar className="size-5">
-                <AvatarImage src={assignee.image ?? undefined} />
+                <AvatarImage
+                  src={assignee.image ? resolveS3Url(assignee.image) : undefined}
+                  className="object-cover"
+                />
                 <AvatarFallback className="text-[10px]">
                   {assignee.name?.charAt(0)?.toUpperCase() ?? "?"}
                 </AvatarFallback>
