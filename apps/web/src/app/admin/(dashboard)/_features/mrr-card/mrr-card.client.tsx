@@ -14,27 +14,25 @@ export function MrrCard() {
     Loading: <MrrCardLoading />,
     Errored: <MrrCardError />,
     Success: ({ data }) => {
-      const formattedTotalRevenue = new Intl.NumberFormat("fr-FR", {
-        style: "currency",
-        currency: "EUR",
-      }).format(data?.totalRevenue ?? 0);
+      const formatEur = (value: number) =>
+        new Intl.NumberFormat("fr-FR", {
+          style: "currency",
+          currency: "EUR",
+        }).format(value);
 
-      const formattedMrr = new Intl.NumberFormat("fr-FR", {
-        style: "currency",
-        currency: "EUR",
-      }).format(data?.mrr ?? 0);
-
-      const formattedArr = new Intl.NumberFormat("fr-FR", {
-        style: "currency",
-        currency: "EUR",
-      }).format(data?.arr ?? 0);
+      const formattedGrossRevenue = formatEur(data?.grossRevenue ?? 0);
+      const formattedNetRevenue = formatEur(data?.netRevenue ?? 0);
+      const formattedMrr = formatEur(data?.mrr ?? 0);
+      const formattedArr = formatEur(data?.arr ?? 0);
+      const formattedLtv = data?.ltv == null ? "—" : formatEur(data.ltv);
 
       return (
         <Card>
           <CardContent>
-            <div className="text-2xl font-bold">{formattedTotalRevenue}</div>
+            <div className="text-2xl font-bold">{formattedGrossRevenue}</div>
+            <p className="text-muted-foreground text-xs">Gross revenue</p>
             <p className="text-muted-foreground mb-4 text-xs">
-              Total revenue
+              {formattedNetRevenue} net
             </p>
 
             {/* Breakdown section */}
@@ -47,12 +45,22 @@ export function MrrCard() {
                   <span className="text-sm font-semibold">{formattedMrr}</span>
                 </div>
               </div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="text-muted-foreground text-xs">ARR</span>
+              <div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="text-muted-foreground text-xs">ARR</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-semibold">
+                      {formattedArr}
+                    </span>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-semibold">{formattedArr}</span>
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground text-xs">LTV</span>
+                  <span className="text-muted-foreground text-xs">
+                    {formattedLtv}
+                  </span>
                 </div>
               </div>
             </div>

@@ -5,6 +5,29 @@ import { prisma } from "@workspace/db";
 import { endOfMonth, format, startOfMonth, subMonths } from "date-fns";
 import { GetMonthlyStatsSchema } from "./get-monthly-stats.schema";
 
+/**
+ * Sum gross charge volume (cents) for a month. Auto-pagination walks every
+ * charge in the window — the previous `limit: 100` silently truncated months
+ * with more than 100 charges, undercounting revenue.
+ */
+async function sumMonthlyGrossRevenueCents(
+  start: Date,
+  end: Date
+): Promise<number> {
+  let total = 0;
+  for await (const txn of stripeApi.balanceTransactions.list({
+    type: "charge",
+    created: {
+      gte: Math.floor(start.getTime() / 1000),
+      lte: Math.floor(end.getTime() / 1000),
+    },
+    limit: 100,
+  })) {
+    total += txn.amount;
+  }
+  return total;
+}
+
 export const getMonthlyStats = adminProcedure
   .input(GetMonthlyStatsSchema)
   .query(async ({ input }) => {
@@ -46,46 +69,26 @@ export const getMonthlyStats = adminProcedure
       // Fetch data for each month in parallel
       const monthlyData = await Promise.all(
         monthRanges.map(async (range) => {
-          const [userCount, subscriptionCount, balanceTransactions] =
-            await Promise.all([
-              prisma.user.count({
-                where: {
-                  createdAt: {
-                    gte: range.start,
-                    lte: range.end,
-                  },
-                },
-              }),
-              prisma.subscription.count({
-                where: {
-                  periodStart: {
-                    gte: range.start,
-                    lte: range.end,
-                  },
-                },
-              }),
-              stripeApi.balanceTransactions.list({
-                type: "charge",
-                created: {
-                  gte: Math.floor(range.start.getTime() / 1000),
-                  lte: Math.floor(range.end.getTime() / 1000),
-                },
-                limit: 100,
-              }),
-            ]);
+          const createdInRange = {
+            gte: range.start,
+            lte: range.end,
+          };
 
-          // Sum actual revenue received (net amount after Stripe fees)
-          const revenue = balanceTransactions.data.reduce(
-            (sum, txn) => sum + txn.net,
-            0
-          );
+          const [userCount, subscriptionCount, grossRevenueCents] =
+            await Promise.all([
+              prisma.user.count({ where: { createdAt: createdInRange } }),
+              // "New subscriptions" = created that month. periodStart advances on
+              // every renewal, so filtering by it counted renewals as new signups.
+              prisma.subscription.count({ where: { createdAt: createdInRange } }),
+              sumMonthlyGrossRevenueCents(range.start, range.end),
+            ]);
 
           return {
             month: range.month,
             fullLabel: range.label,
             users: userCount,
             subscriptions: subscriptionCount,
-            revenue: revenue / 100, // Convert cents to dollars
+            revenue: grossRevenueCents / 100,
           };
         })
       );

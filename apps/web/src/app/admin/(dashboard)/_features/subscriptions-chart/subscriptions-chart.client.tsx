@@ -15,14 +15,9 @@ import { ChartContainer, ChartTooltip } from "@workspace/ui/components/chart";
 import { Skeleton } from "@workspace/ui/components/skeleton";
 import { useQueryStates } from "nuqs";
 import { Area, Bar, ComposedChart, Line, XAxis, YAxis } from "recharts";
+import type { GetMonthlyStatsOutput } from "./get-monthly-stats.trpc.query";
 
-type MonthData = {
-  month: string;
-  fullLabel: string;
-  users: number;
-  subscriptions: number;
-  revenue: number;
-};
+type MonthData = GetMonthlyStatsOutput[number];
 
 export function SubscriptionsChart() {
   const trpc = useTRPC();
@@ -108,7 +103,7 @@ export function SubscriptionsChart() {
                 tick={{ fontSize: 12 }}
                 allowDecimals={false}
                 label={{
-                  value: "Revenu ($)",
+                  value: "Revenue (€)",
                   angle: 90,
                   position: "right",
                 }}
@@ -164,7 +159,10 @@ export function SubscriptionsChart() {
                             </span>
                             <span className="font-medium">
                               {entry.name === "revenue"
-                                ? `$${(entry.value as number).toFixed(2)}`
+                                ? new Intl.NumberFormat("fr-FR", {
+                                    style: "currency",
+                                    currency: "EUR",
+                                  }).format(entry.value as number)
                                 : entry.value}
                             </span>
                           </div>

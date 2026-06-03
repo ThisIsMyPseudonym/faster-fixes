@@ -4,6 +4,7 @@ import { adminProcedure } from "@/server/trpc/trpc";
 import { inferProcedureOutput } from "@trpc/server";
 import { prisma } from "@workspace/db/index";
 import Stripe from "stripe";
+import { getMonthlyChurnRate } from "../../_utils/get-churn-rate";
 
 export const getMrr = adminProcedure.query(async () => {
   const subscriptions = await prisma.subscription.findMany({
@@ -11,7 +12,7 @@ export const getMrr = adminProcedure.query(async () => {
     select: { stripeSubscriptionId: true },
   });
 
-  let totalMrr = 0;
+  let totalMrrCents = 0;
 
   for (const subscription of subscriptions) {
     if (!subscription.stripeSubscriptionId) continue;
@@ -27,13 +28,16 @@ export const getMrr = adminProcedure.query(async () => {
 
         if (!price.unit_amount) continue;
 
-        let monthlyAmount = price.unit_amount;
+        // unit_amount is per seat; multiply by quantity or seat-based plans
+        // (e.g. 5-seat Agency) are counted as a single seat and MRR collapses.
+        const quantity = item.quantity ?? 1;
+        let monthlyAmount = price.unit_amount * quantity;
 
         if (price.recurring?.interval === "year") {
-          monthlyAmount = price.unit_amount / 12;
+          monthlyAmount = monthlyAmount / 12;
         }
 
-        totalMrr += monthlyAmount;
+        totalMrrCents += monthlyAmount;
       }
     } catch (error) {
       console.error(
@@ -43,28 +47,40 @@ export const getMrr = adminProcedure.query(async () => {
     }
   }
 
-  // Get actual revenue received from Stripe
-  let totalRevenue = 0;
+  // Gross = money charged to customers; net = what actually lands after Stripe
+  // fees and refunds. `net` alone (the previous behaviour) under-reports the
+  // headline figure, and `limit: 100` silently capped the sum at 100 charges —
+  // auto-pagination walks the full history instead.
+  let grossRevenueCents = 0;
+  let netRevenueCents = 0;
   try {
-    const balanceTransactions = await stripeApi.balanceTransactions.list({
-      type: "charge",
+    for await (const txn of stripeApi.balanceTransactions.list({
       limit: 100,
-    });
-
-    // Sum net amounts (actual money received after Stripe fees)
-    totalRevenue = balanceTransactions.data.reduce(
-      (sum, txn) => sum + txn.net,
-      0
-    );
+    })) {
+      if (txn.type === "charge" || txn.type === "payment") {
+        grossRevenueCents += txn.amount;
+      }
+      // net nets out fees for charges and subtracts refunds/chargebacks.
+      netRevenueCents += txn.net;
+    }
   } catch (error) {
     console.error("Failed to fetch Stripe balance transactions:", error);
   }
 
-  const mrrInEuros = totalMrr / 100; // Convert cents to euros
-  const arr = mrrInEuros * 12; // Annual Recurring Revenue
-  const totalRevenueInEuros = totalRevenue / 100; // Convert cents to euros
+  const activeCount = subscriptions.length;
+  const churnRate = await getMonthlyChurnRate();
 
-  return { mrr: mrrInEuros, arr, totalRevenue: totalRevenueInEuros };
+  const mrr = totalMrrCents / 100;
+  const arr = mrr * 12;
+  const grossRevenue = grossRevenueCents / 100;
+  const netRevenue = netRevenueCents / 100;
+
+  // LTV = ARPA / monthly churn. Undefined when churn is 0 or there is no active
+  // base to derive ARPA from — return null so the UI shows "—" instead of ∞.
+  const arpa = activeCount > 0 ? mrr / activeCount : 0;
+  const ltv = churnRate && churnRate > 0 ? arpa / churnRate : null;
+
+  return { mrr, arr, grossRevenue, netRevenue, ltv };
 });
 
 export type GetMrrOutput = inferProcedureOutput<typeof getMrr>;

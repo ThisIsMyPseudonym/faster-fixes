@@ -1,7 +1,11 @@
-import { SubscriptionStatus } from "@/server/auth/config/subscription-plans";
+import {
+  SubscriptionPlanName,
+  SubscriptionStatus,
+} from "@/server/auth/config/subscription-plans";
 import { adminProcedure } from "@/server/trpc/trpc";
 import { inferProcedureOutput, TRPCError } from "@trpc/server";
 import { prisma } from "@workspace/db";
+import { getMonthlyChurnRate } from "../../_utils/get-churn-rate";
 
 export const getActiveSubscriptions = adminProcedure.query(async () => {
   try {
@@ -10,38 +14,43 @@ export const getActiveSubscriptions = adminProcedure.query(async () => {
       SubscriptionStatus.Trialing,
     ];
 
-    const [totalCount, kyloCount, baltoCount, userCount] = await Promise.all([
-      prisma.subscription.count({
-        where: { status: { in: activeOrTrialingStatus } },
-      }),
-      prisma.subscription.count({
-        where: {
-          status: { in: activeOrTrialingStatus },
-          plan: "kylo",
-        },
-      }),
-      prisma.subscription.count({
-        where: {
-          status: { in: activeOrTrialingStatus },
-          plan: "balto",
-        },
-      }),
-      prisma.user.count(),
-    ]);
+    // better-auth/stripe stores `plan` as the plan name ("pro"/"agency"),
+    // so filtering must use SubscriptionPlanName, not internal codenames.
+    const [totalCount, proCount, agencyCount, userCount, churnRate] =
+      await Promise.all([
+        prisma.subscription.count({
+          where: { status: { in: activeOrTrialingStatus } },
+        }),
+        prisma.subscription.count({
+          where: {
+            status: { in: activeOrTrialingStatus },
+            plan: SubscriptionPlanName.Pro,
+          },
+        }),
+        prisma.subscription.count({
+          where: {
+            status: { in: activeOrTrialingStatus },
+            plan: SubscriptionPlanName.Agency,
+          },
+        }),
+        prisma.user.count(),
+        getMonthlyChurnRate(),
+      ]);
 
     const conversionRate =
       userCount > 0 ? Math.round((totalCount / userCount) * 100) : 0;
 
     return {
       totalCount,
-      kyloCount,
-      baltoCount,
+      proCount,
+      agencyCount,
       userCount,
       conversionRate,
-      kyloPercentage:
-        totalCount > 0 ? Math.round((kyloCount / totalCount) * 100) : 0,
-      baltoPercentage:
-        totalCount > 0 ? Math.round((baltoCount / totalCount) * 100) : 0,
+      churnRate,
+      proPercentage:
+        totalCount > 0 ? Math.round((proCount / totalCount) * 100) : 0,
+      agencyPercentage:
+        totalCount > 0 ? Math.round((agencyCount / totalCount) * 100) : 0,
     };
   } catch (error) {
     throw new TRPCError({

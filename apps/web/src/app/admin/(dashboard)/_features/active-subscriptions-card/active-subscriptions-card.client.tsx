@@ -13,49 +13,64 @@ export function ActiveSubscriptionsCard() {
   return matchQueryStatus(query, {
     Loading: <ActiveSubscriptionsCardLoading />,
     Errored: <ActiveSubscriptionsCardError />,
-    Success: ({ data }) => (
-      <Card>
-        <CardContent>
-          <div className="flex items-baseline gap-2">
-            <div className="text-2xl font-bold">{data?.totalCount}</div>
-            <span className="text-muted-foreground text-xs">
-              ({data?.conversionRate}% of users)
-            </span>
-          </div>
-          <p className="text-muted-foreground mb-4 text-xs">
-            Active subscriptions
-          </p>
+    Success: ({ data }) => {
+      const formattedChurn =
+        data?.churnRate == null
+          ? "—"
+          : new Intl.NumberFormat("fr-FR", {
+              style: "percent",
+              maximumFractionDigits: 1,
+            }).format(data.churnRate);
 
-          {/* Breakdown section */}
-          <div className="space-y-3 border-t pt-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className="text-muted-foreground text-xs">Kylo</span>
+      return (
+        <Card>
+          <CardContent>
+            <div className="flex items-baseline gap-2">
+              <div className="text-2xl font-bold">{data?.totalCount}</div>
+              <span className="text-muted-foreground text-xs">
+                ({data?.conversionRate}% of users)
+              </span>
+            </div>
+            <p className="text-muted-foreground text-xs">
+              Active subscriptions
+            </p>
+            <p className="text-muted-foreground mb-4 text-xs">
+              {formattedChurn} monthly churn
+            </p>
+
+            {/* Breakdown section */}
+            <div className="space-y-3 border-t pt-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="text-muted-foreground text-xs">Pro</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-semibold">
+                    {data?.proCount}
+                  </span>
+                  <span className="text-muted-foreground text-xs">
+                    ({data?.proPercentage}%)
+                  </span>
+                </div>
               </div>
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-semibold">{data?.kyloCount}</span>
-                <span className="text-muted-foreground text-xs">
-                  ({data?.kyloPercentage}%)
-                </span>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="text-muted-foreground text-xs">Agency</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-semibold">
+                    {data?.agencyCount}
+                  </span>
+                  <span className="text-muted-foreground text-xs">
+                    ({data?.agencyPercentage}%)
+                  </span>
+                </div>
               </div>
             </div>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className="text-muted-foreground text-xs">Balto</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-semibold">
-                  {data?.baltoCount}
-                </span>
-                <span className="text-muted-foreground text-xs">
-                  ({data?.baltoPercentage}%)
-                </span>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    ),
+          </CardContent>
+        </Card>
+      );
+    },
   });
 }
 
