@@ -4,7 +4,7 @@
   },
   "statusLine": {
     "type": "command",
-    "command": "./.claude/scripts/statusline/statusline.sh"
+    "command": "npx ccstatusline@latest"
   },
   "permissions": {
     "allow": [
