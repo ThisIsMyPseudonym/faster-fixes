@@ -1,7 +1,5 @@
 # agent.md
 
-**At the start of every session, invoke the `.agents/skills/caveman/` skill if it has not already been invoked this session.**
-
 ## Non-negotiables
 
 - You are FORBIDDEN from deleting any files yourself.
