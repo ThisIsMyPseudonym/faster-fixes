@@ -1,5 +1,4 @@
 import { APP_URL } from "@/app/_constants/app";
-import { SITE_NAME } from "@/app/_constants/seo";
 import { BreadcrumbSchema } from "@/app/_features/seo/breadcrumb-schema";
 import { SoftwareApplicationSchema } from "@/app/_features/seo/software-application-schema";
 import { WebPageSchema } from "@/app/_features/seo/web-page-schema";
@@ -11,9 +10,11 @@ import { GithubHero } from "./_features/github-hero";
 import { GithubHowItWorksSection } from "./_features/github-how-it-works-section";
 
 const pageUrl = `${APP_URL}/integrations/github`;
-const title = `GitHub integration — Visual feedback to GitHub issues | ${SITE_NAME}`;
+// Title/meta lead with the job-to-be-done, not the generic "{Tool} integration" pattern,
+// to lift CTR at page-1-adjacent positions where users compare similarly-ranked tool pages (ChatSEO 2026-07-07).
+const title = "GitHub Issues from Visual Feedback — Screenshot + Context";
 const description =
-  "Client feedback becomes a GitHub issue with screenshot, CSS selector, React component path, and full browser context — automatically. Bidirectional status sync included.";
+  "Turn client feedback into GitHub issues automatically — screenshot, CSS selector, component path, browser info included. Bidirectional status sync.";
 const ogImageAlt =
   "FasterFixes GitHub integration — visual feedback to GitHub issues";
 const datePublished = "2026-05-05T00:00:00.000Z";

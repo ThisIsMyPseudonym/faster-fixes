@@ -1,5 +1,4 @@
 import { APP_URL } from "@/app/_constants/app";
-import { SITE_NAME } from "@/app/_constants/seo";
 import { BreadcrumbSchema } from "@/app/_features/seo/breadcrumb-schema";
 import { SoftwareApplicationSchema } from "@/app/_features/seo/software-application-schema";
 import { WebPageSchema } from "@/app/_features/seo/web-page-schema";
@@ -11,9 +10,11 @@ import { LinearHero } from "./_features/linear-hero";
 import { LinearHowItWorksSection } from "./_features/linear-how-it-works-section";
 
 const pageUrl = `${APP_URL}/integrations/linear`;
-const title = `Linear integration — Client feedback to Linear issues | ${SITE_NAME}`;
+// Title/meta lead with the outcome (issue creation) over the generic "{Tool} integration" pattern,
+// to lift CTR at borderline page-1/2 positions where users compare similarly-ranked tool pages (ChatSEO 2026-07-07).
+const title = "Linear Integration: Client Feedback → Linear Issues, Auto";
 const description =
-  "Client feedback from your staging widget lands in Linear automatically — with screenshot, CSS selector, React component path, and browser context.";
+  "Client feedback lands in Linear automatically, with screenshot, CSS selector, React component path, and full browser context. No manual triage.";
 const ogImageAlt =
   "FasterFixes Linear integration — visual feedback creating a Linear issue with screenshot and dev context attached";
 const datePublished = "2026-05-06T00:00:00.000Z";
