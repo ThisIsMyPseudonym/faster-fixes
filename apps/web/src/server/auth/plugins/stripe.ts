@@ -19,24 +19,30 @@
       enabled: true,                                                                                                                                                          
       getCustomerCreateParams: async (organization) => {                                                                                                                      
         const owner = await prisma.member.findFirst({                                                                                                                         
-          where: { organizationId: organization.id, role: "owner" },                                                                                                          
+          where: {                                                                                                                                                            
+            organizationId: organization.id,                                                                                                                                  
+            role: "owner",                                                                                                                                                    
+          },                                                                                                                                                                  
           select: {                                                                                                                                                           
             user: {                                                                                                                                                           
               select: {                                                                                                                                                       
                 email: true,                                                                                                                                                  
               },                                                                                                                                                              
-            },
+            },                                                                                                                                                                
           },                                                                                                                                                                  
         });                                                                                                                                                                   
                                                                                                                                                                               
         return {                                                                                                                                                              
           email: owner?.user.email,                                                                                                                                           
         };                                                                                                                                                                    
-
-    subscription: {
-      enabled: true,
-      onSubscriptionComplete: async ({ subscription, stripeSubscription }) => {
-        await prisma.subscription.update({
+      },                                                                                                                                                                      
+    },                                                                                                                                                                        
+                                                                                                                                                                              
+    subscription: {                                                                                                                                                           
+      enabled: true,                                                                                                                                                          
+      onSubscriptionComplete: async ({                                                                                                                                        
+        subscription,                                                                                                                                                         
+        stripeSubscription,                                                                                                                                                   
           where: {
             id: subscription.id,
           },
