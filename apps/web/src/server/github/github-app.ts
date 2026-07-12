@@ -1,4 +1,6 @@
-import { createAppAuth } from "@octokit/auth-app";
+ import { createAppAuth } from "@octokit/auth-app";
+  import { Octokit } from "@octokit/core";
+
   function getGithubAppConfig() {
     const appId = process.env.GITHUB_APP_ID;
     const privateKey = process.env.GITHUB_PRIVATE_KEY?.replace(/\\n/g, "\n");
@@ -7,6 +9,8 @@ import { createAppAuth } from "@octokit/auth-app";
       throw new Error(
         "GitHub integration is not configured. Set GITHUB_APP_ID and GITHUB_PRIVATE_KEY.",
       );
+    }
+
     return { appId, privateKey };
   }
 
