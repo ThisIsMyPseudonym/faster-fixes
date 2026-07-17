@@ -76,15 +76,18 @@ export function FeedbackProvider({
     void init();
   }, [client]);
 
-  if (!initialized || !reviewerToken || !config || !config.enabled) {
-    return <>{children}</>;
-  }
+  // Always render the core so the element type above `children` never changes.
+  // Switching between a bare fragment and the core after the config fetch
+  // resolves would reparent — and therefore remount — the entire host app.
+  // The core stays inert (no effects, no portal) until token + config arrive.
+  const active =
+    initialized && !!reviewerToken && !!config && config.enabled;
 
   return (
     <FeedbackProviderCore
       client={client}
-      reviewerToken={reviewerToken}
-      config={config}
+      reviewerToken={active ? reviewerToken : null}
+      config={active ? config : null}
       color={color}
       position={position}
       classNames={classNames}

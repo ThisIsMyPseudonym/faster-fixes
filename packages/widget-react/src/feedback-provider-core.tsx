@@ -30,8 +30,10 @@ import { ElementHighlight } from "./components/element-highlight.js";
 
 export type FeedbackProviderCoreProps = {
   client: FeedbackClient;
-  reviewerToken: string;
-  config: WidgetConfig;
+  /** Pass null to render inert: context mounts, but no effects or UI run. */
+  reviewerToken: string | null;
+  /** Pass null to render inert: context mounts, but no effects or UI run. */
+  config: WidgetConfig | null;
   color?: string;
   position?: WidgetPosition;
   classNames?: Partial<ClassNames>;
@@ -50,7 +52,13 @@ export type FeedbackProviderCoreProps = {
  * Renders the widget given a pre-resolved `client`, `reviewerToken`, and
  * `config`. The public `FeedbackProvider` is a thin wrapper that performs
  * the cookie/HTTP init dance and then renders this component.
+ *
+ * When `reviewerToken` or `config` is null the core is inert: the context
+ * still wraps `children` (so `useFeedback` works and the tree shape stays
+ * stable across activation) but no effects run and no UI is portalled.
  */
+const INERT_CONFIG: WidgetConfig = { enabled: false, branding: false };
+
 export function FeedbackProviderCore({
   client,
   reviewerToken,
@@ -91,6 +99,8 @@ export function FeedbackProviderCore({
   const portalCleanupRef = useRef<(() => void) | null>(null);
   const recorderRef = useRef<DiagnosticsRecorder | null>(null);
 
+  const active = reviewerToken !== null && config !== null && config.enabled;
+
   const effectiveColor = color ?? DEFAULT_WIDGET_COLOR;
   const effectivePosition = position ?? DEFAULT_WIDGET_POSITION;
 
@@ -102,6 +112,7 @@ export function FeedbackProviderCore({
   );
 
   const refreshFeedback = useCallback(async () => {
+    if (reviewerToken === null) return;
     try {
       const res = await client.getFeedback(reviewerToken);
       setFeedbackItems(res.feedback);
@@ -127,7 +138,7 @@ export function FeedbackProviderCore({
   // widget. Gated by captureDiagnostics so an opted-out site never patches
   // globals. Starts at mount — activity before hydration is not captured.
   useEffect(() => {
-    if (!captureDiagnostics || typeof window === "undefined") return;
+    if (!active || !captureDiagnostics || typeof window === "undefined") return;
     const recorder = createDiagnosticsRecorder({ apiOrigin });
     recorder.start();
     recorderRef.current = recorder;
@@ -135,10 +146,11 @@ export function FeedbackProviderCore({
       recorder.stop();
       recorderRef.current = null;
     };
-  }, [captureDiagnostics, apiOrigin]);
+  }, [active, captureDiagnostics, apiOrigin]);
 
   // Initial feedback load
   useEffect(() => {
+    if (!active || reviewerToken === null) return;
     let cancelled = false;
     void (async () => {
       try {
@@ -155,10 +167,11 @@ export function FeedbackProviderCore({
     return () => {
       cancelled = true;
     };
-  }, [client, reviewerToken]);
+  }, [active, client, reviewerToken]);
 
   // Detect URL changes (SPA navigation)
   useEffect(() => {
+    if (!active) return;
     function checkUrl() {
       const href = window.location.href;
       setCurrentUrl((prev) => {
@@ -179,7 +192,35 @@ export function FeedbackProviderCore({
       window.removeEventListener("popstate", checkUrl);
       clearInterval(interval);
     };
-  }, []);
+  }, [active]);
+
+  // One shared layout watcher for every pin: body childList changes (dialog
+  // portals opening/closing), resize, and load bump a version that pins
+  // reposition against. Each pin owning its own body MutationObserver made
+  // every DOM mutation cost O(pins × selector lookups); the rAF debounce
+  // also coalesces mutation bursts into a single reposition pass.
+  const [layoutVersion, setLayoutVersion] = useState(0);
+  useEffect(() => {
+    if (!active || !mounted || typeof window === "undefined") return;
+    let raf = 0;
+    const bump = () => {
+      if (raf) return;
+      raf = requestAnimationFrame(() => {
+        raf = 0;
+        setLayoutVersion((v) => v + 1);
+      });
+    };
+    const observer = new MutationObserver(bump);
+    observer.observe(document.body, { childList: true });
+    window.addEventListener("resize", bump, { passive: true });
+    window.addEventListener("load", bump);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", bump);
+      window.removeEventListener("load", bump);
+      if (raf) cancelAnimationFrame(raf);
+    };
+  }, [active, mounted]);
 
   // Open pending feedback after navigation (runs once after feedback loads)
   useEffect(() => {
@@ -319,8 +360,12 @@ export function FeedbackProviderCore({
 
   const contextValue = {
     client,
-    reviewerToken,
-    config,
+    // Inert placeholders while inactive: widget components (the only
+    // consumers of token/config) render solely inside the active-gated
+    // portal, so these values are never used for API calls.
+    reviewerToken: reviewerToken ?? "",
+    config: config ?? INERT_CONFIG,
+    layoutVersion,
     mode,
     setMode,
     isVisible,
@@ -355,7 +400,8 @@ export function FeedbackProviderCore({
   return (
     <FeedbackContext.Provider value={contextValue}>
       {children}
-      {mounted &&
+      {active &&
+        mounted &&
         isVisible &&
         createPortal(
           <div

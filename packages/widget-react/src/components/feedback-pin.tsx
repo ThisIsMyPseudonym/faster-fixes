@@ -34,8 +34,13 @@ const PinIcon = () => (
 );
 
 export function FeedbackPin({ item }: FeedbackPinProps) {
-  const { classNames, setActiveFeedback, activeFeedback, setHighlightSelector } =
-    useFeedbackContext();
+  const {
+    classNames,
+    setActiveFeedback,
+    activeFeedback,
+    setHighlightSelector,
+    layoutVersion,
+  } = useFeedbackContext();
   const [position, setPosition] = useState<PinPosition | null>(null);
 
   const PIN_SIZE = 24;
@@ -119,8 +124,6 @@ export function FeedbackPin({ item }: FeedbackPinProps) {
 
   useEffect(() => {
     updatePosition();
-    window.addEventListener("resize", updatePosition, { passive: true });
-    window.addEventListener("load", updatePosition);
 
     // Staggered retries to handle hydration and lazy rendering.
     // React hydration timing is non-deterministic — a single 500ms retry
@@ -130,18 +133,17 @@ export function FeedbackPin({ item }: FeedbackPinProps) {
       setTimeout(updatePosition, delay),
     );
 
-    // Watch for direct children of body changing (dialog portals opening/closing)
-    const observer = new MutationObserver(updatePosition);
-    observer.observe(document.body, { childList: true });
-
     return () => {
-      window.removeEventListener("resize", updatePosition);
-      window.removeEventListener("load", updatePosition);
       cancelAnimationFrame(raf);
       retryTimers.forEach(clearTimeout);
-      observer.disconnect();
     };
   }, [updatePosition]);
+
+  // Reposition when the provider's shared layout watcher fires (body
+  // childList, resize, load) — replaces the per-pin body MutationObserver.
+  useEffect(() => {
+    updatePosition();
+  }, [updatePosition, layoutVersion]);
 
   if (!position) return null;
 
