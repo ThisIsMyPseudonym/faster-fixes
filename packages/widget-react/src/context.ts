@@ -46,6 +46,10 @@ export type FeedbackContextValue = {
   refreshFeedback: () => Promise<void>;
   getDiagnosticTrail: () => DiagnosticTrail | undefined;
 
+  // Bumped by the provider's shared layout watcher (body childList, resize,
+  // load) so pins can reposition without each owning a MutationObserver.
+  layoutVersion: number;
+
   // Selection state
   selectedElement: Element | null;
   setSelectedElement: (el: Element | null) => void;
